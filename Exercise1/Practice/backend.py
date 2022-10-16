@@ -23,8 +23,8 @@ def forwardSubstitution(A, b):
   m = len(A)  # Number of rows
   n = len(A[0]) # Number of columns
   # Find the pivot elements. A has at most m pivot elements.
+  j = -1 # Column of current pivot element
   for i in range(m):
-    j = -1 # Column of current pivot element
     # Step 1: Begin in the leftmost nonzero column
     non_zero_value = False
     while(non_zero_value == False):
