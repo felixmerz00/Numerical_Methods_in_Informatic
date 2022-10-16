@@ -18,6 +18,57 @@ def setUpLinearSystem(scanner):
 # Task c)
 # Implement the gaussian elimination method, to solve the given system of linear equations
 # Add full pivoting to increase accuracy and stability of the solution
+
+def forwardSubstitution(A, b):
+  m = len(A)  # Number of rows
+  n = len(A[0]) # Number of columns
+  # Find the pivot elements. A has at most m pivot elements.
+  for i in range(m):
+    j = -1 # Column of current pivot element
+    # Step 1: Begin in the leftmost nonzero column
+    non_zero_value = False
+    while(non_zero_value == False):
+      j += 1
+      # Check the whole column for non zero values
+      for i1 in range(i, m):
+        if(A[i1][j] != 0):
+          non_zero_value = True
+
+    # Step 2: Select the biggest absolute element in the column as pivot
+    # If necessary, interchange rows to move this entry into the pivot position
+    i_max = i # Index of biggest element
+    for i1 in range(i+1, m):
+      if(abs(A[i1][j]) > abs(A[i_max][j])):
+        i_max = i1
+    if(i != i_max):
+      A[[i, i_max]] = A[[i_max, i]]
+      (b[i], b[i_max]) = (b[i_max], b[i])
+
+    # The pivot element is now at A[i][j]
+    
+    # Step 3: Create zeros in all positions below the pivot by unsing row replacement operations
+    for i1 in range(i+1, m):
+      if(A[i1][j] != 0):
+        x = (-1)*A[i1][j]/A[i][j]  # Factor for the row operation
+        # Execute the row operation onto the whole row
+        for j1 in range(0, n):
+          A[i1][j1] += x * A[i][j1]
+        b[i1] += x * b[i]
+    
+    print(A)
+    print(b)
+    print("\n")
+      
+    # Step 4: Cover the row containing the pivot position and all rows above
+    # Then Apply steps 1-3 to the submatrix that remains
+    # This step is done by increasing the value of i in the for loop.
+  print(A)
+  print(b)
+  return A, b
+
+
 def solveLinearSystem(A, b):
+  A, b = forwardSubstitution(A, b)
+
   return np.ones(b.shape)
 
