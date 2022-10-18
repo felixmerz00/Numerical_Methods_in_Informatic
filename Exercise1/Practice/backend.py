@@ -1,150 +1,123 @@
 import numpy as np
 from ctscanner import CTScanner
 
+def getReducedEchelonForm(M):
+    pivot_spalte = 0
+    pivot_zeile = 0
+    echelon_form = False
+
+    (row_count, column_count) = M.shape
+
+    while echelon_form == False:
+
+        # 1. Get Non-Zero Pivot-element from M (only lower rows)
+        for i in range(pivot_zeile, row_count - 1):
+            # If row is all zero: exchange row with last non zero row
+            if not np.any(M[i, :]):
+                LastNonZeroRow = getLastNonZeroRow(M, i)
+                M[[i, LastNonZeroRow]] = M[[LastNonZeroRow, i]]
+
+        free_var_col = True
+        for i in range(pivot_zeile, row_count):
+            # If pivot element is non zero
+            if not -0.00001 < M[i, pivot_spalte] < 0.00001:
+                free_var_col = False
+                M[[i, pivot_zeile]] = M[[pivot_zeile, i]]
+                break
+
+        if free_var_col:
+            pivot_spalte += 1
+            if pivot_zeile == row_count or pivot_spalte == column_count:
+                echelon_form = True
+
+            elif not np.any(M[[pivot_zeile, row_count - 1], [pivot_spalte, column_count - 1]]):
+                echelon_form = True
+
+            continue
+
+        # 2. Divide row by pivot element
+        scalar = M[pivot_zeile, pivot_spalte]
+        M[pivot_zeile, :] = M[pivot_zeile, :] / scalar
+
+        # 3. Subtract x times pivoting row from lower & upper rows
+        for i in range(0, pivot_zeile):
+            scalar = M[i, pivot_spalte]
+            if scalar != 0:
+                M[i, :] = M[i, :] - scalar * M[pivot_zeile, :]
+
+        for i in range(pivot_zeile + 1, row_count):
+            scalar = M[i, pivot_spalte]
+            if scalar != 0:
+                M[i, :] = M[i, :] - scalar * M[pivot_zeile, :]
+
+        # 4. Move one down and left
+        pivot_spalte += 1
+        pivot_zeile += 1
+        if pivot_zeile == row_count or pivot_spalte == column_count:
+            echelon_form = True
+
+        elif not np.any(M[[pivot_zeile, row_count - 1], [pivot_spalte, column_count - 1]]):
+            echelon_form = True
+
+    return M
+
+def getLastNonZeroRow(matrix, otherRow):
+    (row_count, column_count) = matrix.shape
+    for i in range(row_count - 1, otherRow, -1):
+        if np.any(matrix[i, :]):
+            return i
+
+
 # Task a)
-# Implement a method, calculating the rowrank of a given matrix and return it.
+# Implement a method, calculating the rowrank of a given M and return it.
 # Obviously, you're not allowed to use any method solving that problem for you.
 def rowrank(matrix):
-  A = matrix
-
-  # Put matrix into Echelon form
-  m = len(A)  # Number of rows
-  n = len(A[0]) # Number of columns
-  # Find the pivot elements. A has at most m pivot elements.
-  j = -1 # Column of current pivot element
-  for i in range(m-1):
-    # Step 1: Begin in the leftmost nonzero column
-    non_zero_value = False
-    while(non_zero_value == False and j < n-1):
-      j += 1
-      # Check the whole column for non zero values
-      for i1 in range(i, m):
-        if(A[i1][j] != 0):
-          non_zero_value = True
-
-    # Step 2: Select the biggest absolute element in the column as pivot
-    # If necessary, interchange rows to move this entry into the pivot position
-    i_max = i # Index of biggest element
-    for i1 in range(i+1, m):
-      if(abs(A[i1][j]) > abs(A[i_max][j])):
-        i_max = i1
-    if(i != i_max):
-      A[[i, i_max]] = A[[i_max, i]]
-
-    # The pivot element is now at A[i][j]
-    
-    # Step 3: Create zeros in all positions below the pivot by unsing row replacement operations
-    for i1 in range(i+1, m):
-      if(A[i1][j] != 0):
-        x = (-1)*A[i1][j]/A[i][j]  # Factor for the row operation
-        # Execute the row operation onto the whole row
-        for j1 in range(0, n):
-          A[i1][j1] += x * A[i][j1]
-      
-    # Step 4: Cover the row containing the pivot position and all rows above
-    # Then Apply steps 1-3 to the submatrix that remains
-    # This step is done by increasing the value of i in the for loop.
-  
-  # Count pivot elements
-  rank = 0
-  for i in range(m):
-    for j in range(n):
-      if(A[i][j] != 0):
-        rank += 1
-        break
-  return rank
-
+    matrix = getReducedEchelonForm(matrix)
+    matrix = matrix.round(3)
+    row_rank = getLastNonZeroRow(matrix, 0) + 1
+    return row_rank
 
 
 # Task b)
 # Implement a method setting up the linear system, as described in the exercise.
 # Make use of the scanner.shootRays(angle) function.
 def setUpLinearSystem(scanner):
-  A = np.ones((scanner.resolution ** 2, scanner.resolution ** 2))
-  b = np.zeros(scanner.resolution ** 2)
-  return A, b
+
+    scanner_res = scanner.resolution ** 2
+    A = np.zeros((scanner_res, scanner_res))
+    b = np.zeros(scanner_res)
+
+    current_row = 0
+    zero_row = np.zeros(scanner_res)
+
+    # Repeat until full rank
+    while np.linalg.matrix_rank(A) < scanner_res:
+        # Shoot rays from random angle
+        ray_idxs, ray_int, ray_len = scanner.shootRays(np.pi * np.random.rand())
+        for i, cell_idxs in enumerate(ray_idxs):
+
+            # Until 0-matrix fully filled
+            if len(A) > current_row:
+                b[current_row] = ray_int[i]
+                np.put(A[current_row], cell_idxs, ray_len[i])
+
+            # Append row
+            else:
+                b = np.append(b, ray_int[i])
+                A = np.vstack([A, zero_row])
+
+            np.put(A[current_row], cell_idxs, ray_len[i])
+            current_row = current_row+1
+
+    return A, b
+
 
 # Task c)
 # Implement the gaussian elimination method, to solve the given system of linear equations
 # Add full pivoting to increase accuracy and stability of the solution
-
-def forwardSubstitution(A, b):
-  m = len(A)  # Number of rows
-  n = len(A[0]) # Number of columns
-  # Find the pivot elements. A has at most m pivot elements.
-  j = -1 # Column of current pivot element
-  for i in range(m-1):
-    # Step 1: Begin in the leftmost nonzero column
-    non_zero_value = False
-    while(non_zero_value == False and j < n-1):
-      j += 1
-      # Check the whole column for non zero values
-      for i1 in range(i, m):
-        if(A[i1][j] != 0):
-          non_zero_value = True
-
-    # Step 2: Select the biggest absolute element in the column as pivot
-    # If necessary, interchange rows to move this entry into the pivot position
-    i_max = i # Index of biggest element
-    for i1 in range(i+1, m):
-      if(abs(A[i1][j]) > abs(A[i_max][j])):
-        i_max = i1
-    if(i != i_max):
-      A[[i, i_max]] = A[[i_max, i]]
-      (b[i], b[i_max]) = (b[i_max], b[i])
-
-    # The pivot element is now at A[i][j]
-    
-    # Step 3: Create zeros in all positions below the pivot by unsing row replacement operations
-    for i1 in range(i+1, m):
-      if(A[i1][j] != 0):
-        x = (-1)*A[i1][j]/A[i][j]  # Factor for the row operation
-        # Execute the row operation onto the whole row
-        for j1 in range(0, n):
-          A[i1][j1] += x * A[i][j1]
-        b[i1] += x * b[i]
-      
-    # Step 4: Cover the row containing the pivot position and all rows above
-    # Then Apply steps 1-3 to the submatrix that remains
-    # This step is done by increasing the value of i in the for loop.
-  return A, b
-
-  
-def backwardSubstitution(A, b):
-  print(A)
-  print("\n")
-  # STEP 5: 
-  # Find the rightmost pivot and working upward and to the left
-  m = len(A)
-  n = len(A[0])
-  for i in range(m-1, -1, -1):
-    j = 0
-    while(A[i][j] == 0):
-      j += 1
-      if(j == n):
-        j = 0
-        i -= 1
-        
-    # i, j now point to the pivot element
-    # Make the pivot to one by dividing the whole row by the value in the pivot
-    if(A[i][j] != 1):
-      x = A[i][j]
-      for j1 in range(j, n):
-        A[i][j1] /= x
-      b[i] /= x
-
-    # Create zeros above each pivot.
-    for i1 in range(i-1, -1, -1):
-      x = A[i1][j]
-      for j1 in range(j, n):
-        A[i1][j1] -= x*A[i][j1]
-      b[i1] -= x*b[i]
-
-  return A, b
-
 def solveLinearSystem(A, b):
-  A, b = forwardSubstitution(A, b)
-  A, b = backwardSubstitution(A, b)
+    matrix = np.column_stack((A, b))
 
-  return np.ones(b.shape)
+    matrix = getReducedEchelonForm(matrix)
 
+    return matrix[:, -1]
