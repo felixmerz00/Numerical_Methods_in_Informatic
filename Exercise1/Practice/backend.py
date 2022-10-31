@@ -1,69 +1,69 @@
 import numpy as np
 from ctscanner import CTScanner
 
-def getReducedEchelonForm(M):
-    pivot_spalte = 0
-    pivot_zeile = 0
-    echelon_form = False
+def getReducedEchelonForm(matrix):
+    pivot_column = 0
+    pivot_row = 0
+    is_in_echelon_form = False
 
-    (row_count, column_count) = M.shape
+    (row_count, column_count) = matrix.shape
 
-    while echelon_form == False:
+    while is_in_echelon_form == False:
 
-        # 1. Get Non-Zero Pivot-element from M (only lower rows)
-        for i in range(pivot_zeile, row_count - 1):
-            # If row is all zero: exchange row with last non zero row
-            if not np.any(M[i, :]):
-                LastNonZeroRow = getLastNonZeroRow(M, i)
-                M[[i, LastNonZeroRow]] = M[[LastNonZeroRow, i]]
+        # 1. Get non zero pivot element from matrix (only lower rows)
+        for i in range(pivot_row, row_count - 1):
+            # If the row is all zero: exchange row with last non zero row
+            if not np.any(matrix[i, :]):
+                LastNonZeroRow = getLastNonZeroRow(matrix, i)
+                matrix[[i, LastNonZeroRow]] = matrix[[LastNonZeroRow, i]]
 
         free_var_col = True
-        for i in range(pivot_zeile, row_count):
-            # If pivot element is non zero
-            if not -0.00001 < M[i, pivot_spalte] < 0.00001:
+        for i in range(pivot_row, row_count):
+            # If the pivot element is non zero
+            if not -0.00001 < matrix[i, pivot_column] < 0.00001:
                 free_var_col = False
-                M[[i, pivot_zeile]] = M[[pivot_zeile, i]]
+                matrix[[i, pivot_row]] = matrix[[pivot_row, i]]
                 break
 
         if free_var_col:
-            pivot_spalte += 1
-            if pivot_zeile == row_count or pivot_spalte == column_count:
-                echelon_form = True
+            pivot_column += 1
+            if pivot_row == row_count or pivot_column == column_count:
+                is_in_echelon_form = True
 
-            elif not np.any(M[[pivot_zeile, row_count - 1], [pivot_spalte, column_count - 1]]):
-                echelon_form = True
+            elif not np.any(matrix[[pivot_row, row_count - 1], [pivot_column, column_count - 1]]):
+                is_in_echelon_form = True
 
             continue
 
-        # 2. Divide row by pivot element
-        scalar = M[pivot_zeile, pivot_spalte]
-        M[pivot_zeile, :] = M[pivot_zeile, :] / scalar
+        # 2. Divide the row by its pivot element
+        scalar = matrix[pivot_row, pivot_column]
+        matrix[pivot_row, :] = matrix[pivot_row, :] / scalar
 
-        # 3. Subtract x times pivoting row from lower & upper rows
-        for i in range(0, pivot_zeile):
-            scalar = M[i, pivot_spalte]
+        # 3. Subtract x times the pivot row from the rows below and above
+        for i in range(0, pivot_row):
+            scalar = matrix[i, pivot_column]
             if scalar != 0:
-                M[i, :] = M[i, :] - scalar * M[pivot_zeile, :]
+                matrix[i, :] = matrix[i, :] - scalar * matrix[pivot_row, :]
 
-        for i in range(pivot_zeile + 1, row_count):
-            scalar = M[i, pivot_spalte]
+        for i in range(pivot_row + 1, row_count):
+            scalar = matrix[i, pivot_column]
             if scalar != 0:
-                M[i, :] = M[i, :] - scalar * M[pivot_zeile, :]
+                matrix[i, :] = matrix[i, :] - scalar * matrix[pivot_row, :]
 
-        # 4. Move one down and left
-        pivot_spalte += 1
-        pivot_zeile += 1
-        if pivot_zeile == row_count or pivot_spalte == column_count:
-            echelon_form = True
+        # 4. Move one row down and one column to the left
+        pivot_column += 1
+        pivot_row += 1
+        if pivot_row == row_count or pivot_column == column_count:
+            is_in_echelon_form = True
 
-        elif not np.any(M[[pivot_zeile, row_count - 1], [pivot_spalte, column_count - 1]]):
-            echelon_form = True
+        elif not np.any(matrix[[pivot_row, row_count - 1], [pivot_column, column_count - 1]]):
+            is_in_echelon_form = True
 
-    return M
+    return matrix
 
-def getLastNonZeroRow(matrix, otherRow):
+def getLastNonZeroRow(matrix, other_Row):
     (row_count, column_count) = matrix.shape
-    for i in range(row_count - 1, otherRow, -1):
+    for i in range(row_count - 1, other_Row, -1):
         if np.any(matrix[i, :]):
             return i
 
@@ -96,7 +96,7 @@ def setUpLinearSystem(scanner):
         ray_idxs, ray_int, ray_len = scanner.shootRays(np.pi * np.random.rand())
         for i, cell_idxs in enumerate(ray_idxs):
 
-            # Until 0-matrix fully filled
+            # Until the zero matrix is fully filled
             if len(A) > current_row:
                 b[current_row] = ray_int[i]
                 np.put(A[current_row], cell_idxs, ray_len[i])
@@ -117,7 +117,5 @@ def setUpLinearSystem(scanner):
 # Add full pivoting to increase accuracy and stability of the solution
 def solveLinearSystem(A, b):
     matrix = np.column_stack((A, b))
-
     matrix = getReducedEchelonForm(matrix)
-
     return matrix[:, -1]
