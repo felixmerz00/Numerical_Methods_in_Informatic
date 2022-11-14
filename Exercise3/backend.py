@@ -15,6 +15,6 @@ def changeBase(sourceBase: list, targetBase: list) -> np.array:
 # Input: lists sourceBase and subSpace - lists of vectors (e.g. [np.array([1, 2, 3]), np.array([2, 0, 1]), ...])
 # Output: bool
 def spansSubSpace(sourceBase: list, subBase: list) -> bool:
-  u = sourceBase + subBase
-  out = np.linalg.matrix_rank(u) <= np.linalg.matrix_rank(sourceBase)
+  h = sourceBase + subBase
+  out = np.linalg.matrix_rank(h) <= np.linalg.matrix_rank(sourceBase)
   return out
