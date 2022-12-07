@@ -5,6 +5,9 @@ import numpy as np
 # Input: Matrix A, Vector b. A - 2D numpy array, b - 1D numpy array
 # Output: The Eigenvector of A with the largest (absolute) Eigenvalue, given as 1D np.array.
 def powerMethod(A: np.array, b: np.array) -> np.array:
+  b_new = (A**1000)*b
+  biggest_val = max(b)
+  b_out = A*((1/biggest_val)*b)
   return np.ones(b.shape)
 
 # Task b)

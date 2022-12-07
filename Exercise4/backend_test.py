@@ -1,6 +1,6 @@
 import numpy as np
 import sys
-import backend
+import backend_Jan
 import traceback
 
 class Tester:
@@ -174,4 +174,4 @@ class Tester:
     self.performTest(self.testC)
 
 tester = Tester()
-tester.runTests(backend)
+tester.runTests(backend_Jan)
