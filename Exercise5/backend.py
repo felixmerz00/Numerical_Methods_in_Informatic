@@ -21,5 +21,20 @@ def linearLSQ(x: np.array, y: np.array) -> list:
 # Input: sourceBase - list of vectors, as in a)
 # Output: orthoronalizedBase - list of vectors, with same size and shape as sourceBase
 def orthonormalize(sourceBase: list) -> list:
-  return [np.ones(sourceBase[0].shape[0])] * len(sourceBase)
+  # in sourcebase, a row is a column
+  orthonormalBasis = np.zeros((len(sourceBase), len(sourceBase[0])))
+  orthonormalBasis[0] = sourceBase[0]
+  for column_number in range(1, len(sourceBase)):
+    xp = np.array(sourceBase[column_number]).T
+    subtrahend = np.zeros(len(sourceBase[column_number]))
+    for i in range(0, column_number):
+      vpLast = np.array(orthonormalBasis[i]).T
+      subtrahend += (xp.dot(vpLast)/np.dot(vpLast, vpLast))*vpLast
+    orthonormalBasis[column_number] = (xp - subtrahend).T
+
+  for column_number in range(len(orthonormalBasis)):
+    vp = orthonormalBasis[column_number]
+    orthonormalBasis[column_number] = vp/np.sqrt(np.dot(vp, vp))
+  
+  return orthonormalBasis
 
